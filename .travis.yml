@@ -1,0 +1,23 @@
+language: cpp
+compiler:
+  - clang
+  - gcc
+os:
+  - linux
+  - osx
+sudo: false
+cache:
+  - apt
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+      - time
+before_install:
+  - (grep flags /proc/cpuinfo | sort -u) || true
+  - (sysctl -a | grep machdep.cpu.features) || true
+  - if [ "$CC" = "gcc" ]; then export CC="gcc-4.8"; fi
+script:
+  - echo | $CC -Wno-unknown-attributes -include sw-avx2intrin.h -mavx -x c - -c -o a.out
