@@ -681,6 +681,16 @@ inline __m256i f (__m256i a, __m256i b, const int c) { \
   ); \
 }
 
+#undef _mm256_extracti128_si256
+#define _mm256_extracti128_si256 _mm256_extractf128_si256
+
+GENERATE_SWITCHED_CALL_2C_3(_mm_extract_epi32, int, __m128i)
+GENERATE_SWITCHED_CALL_2C_1(_mm_extract_epi64, __int64, __m128i)
+GENERATE_SWITCHED_CALL_2C_7(_mm256_extract_epi32, int, __m256i)
+GENERATE_SWITCHED_CALL_3C_7(_mm256_insert_epi32, __m256i, __m256i, int)
+GENERATE_SWITCHED_CALL_2C_1(_mm256_extracti128_si256, __m128i, __m256i)
+GENERATE_SWITCHED_CALL_2C_3(_mm256_extract_epi64, __int64, __m256i)
+
 #define _mm256_abs_epi8  _Xmm256_abs_epi8
 #define _mm256_abs_epi16 _Xmm256_abs_epi16
 #define _mm256_abs_epi32 _Xmm256_abs_epi32
@@ -724,16 +734,13 @@ _MM256TWO_LANES_2(_mm256_avg_epu16, _mm_avg_epu16)
 #define _mm256_blend_epi16 _Xmm256_blend_epi16
 _MM256TWO_LANES_3C(_mm256_blend_epi16, _mm_blend_epi16)
 
-GENERATE_SWITCHED_CALL_2C_7(_mm_extract_epi32, int, __m128i)
-GENERATE_SWITCHED_CALL_2C_7(_mm256_extract_epi32, int, __m256i)
-GENERATE_SWITCHED_CALL_3C_7(_mm256_insert_epi32, __m256i, __m256i, int)
-
 #undef _mm_blend_epi32
 #define _mm_blend_epi32 _Xmm_blend_epi32
 __attribute__((always_inline, artificial, const))
 inline __m128i _mm_blend_epi32 (__m128i a, __m128i b, const int c) {
   int dst[4];
-  for (int j = 0; j < 4; j++) {
+  int j;
+  for (j = 0; j < 4; j++) {
     if (((c >> j) & 1) == 1) {
       dst[j] = _mm_extract_epi32__switched(b, j);
     } else {
@@ -749,7 +756,8 @@ inline __m128i _mm_blend_epi32 (__m128i a, __m128i b, const int c) {
 __attribute__((always_inline, artificial, const))
 inline __m256i _mm256_blend_epi32 (__m256i a, __m256i b, const int c) {
   __m256i dst;
-  for (int j = 0; j < 8; j++) {
+  int j;
+  for (j = 0; j < 8; j++) {
     if (((c >> j) & 1) == 1) {
       dst = _mm256_insert_epi32__switched(dst, _mm256_extract_epi32__switched(b, j), j);
     } else {
@@ -951,9 +959,6 @@ inline __m256i _mm256_cvtepu32_epi64 (__m128i a) {
   );
 }
 
-#undef _mm256_extracti128_si256
-#define _mm256_extracti128_si256 _mm256_extractf128_si256
-
 #define _mm256_hadd_epi16  _Xmm256_hadd_epi16
 #define _mm256_hadd_epi32  _Xmm256_hadd_epi32
 #define _mm256_hadds_epi16 _Xmm256_hadds_epi16
@@ -972,7 +977,8 @@ _MM256TWO_LANES_2(_mm256_hsubs_epi16, _mm_hsubs_epi16)
 __attribute__((always_inline, artificial)) \
 inline __m128i f (t const* base_addr, __m128i vindex, const int scale) { \
   t dst[n]; \
-  for (int j = 0; j < n; j++) { \
+  int j; \
+  for (j = 0; j < n; j++) { \
     dst[j] = *(t*)(base_addr + q(vindex, j) * scale); \
   } \
   return _mm_loadu_si128((const __m128i*)&dst[0]); \
@@ -980,8 +986,9 @@ inline __m128i f (t const* base_addr, __m128i vindex, const int scale) { \
 __attribute__((always_inline, artificial)) \
 inline __m128i fm (__m128i src, t const* base_addr, __m128i vindex, __m128i mask, const int scale) { \
   t dst[n]; \
-  for (int j = 0; j < n; j++) { \
-    if (_mm_extract_epi32(mask, j) < 0) { \
+  int j; \
+  for (j = 0; j < n; j++) { \
+    if (_mm_extract_epi32__switched(mask, j) < 0) { \
       dst[j] = *(t*)(base_addr + q(vindex, j) * scale); \
     } else { \
       dst[j] = p(src, j); \
@@ -1037,10 +1044,10 @@ inline __m256i gm (__m256i src, t const* base_addr, __m256i vindex, __m256i mask
 #define _mm256_mask_i32gather_epi64 _Xmm256_mask_i32gather_epi64
 #define _mm256_mask_i64gather_epi32 _Xmm256_mask_i64gather_epi32
 #define _mm256_mask_i64gather_epi64 _Xmm256_mask_i64gather_epi64
-_MM256GATHER(_mm_i32gather_epi32, _mm_mask_i32gather_epi32, _mm256_i32gather_epi32, _mm256_mask_i32gather_epi32, int, i32, _mm_extract_epi32, _mm_extract_epi32, 4)
-_MM256GATHER(_mm_i32gather_epi64, _mm_mask_i32gather_epi64, _mm256_i32gather_epi64, _mm256_mask_i32gather_epi64, __int64, i64, _mm_extract_epi32, _mm_extract_epi64, 2)
-_MM256GATHER(_mm_i64gather_epi32, _mm_mask_i64gather_epi32, _mm256_i64gather_epi32, _mm256_mask_i64gather_epi32, int, i32, _mm_extract_epi64, _mm_extract_epi32, 2)
-_MM256GATHER(_mm_i64gather_epi64, _mm_mask_i64gather_epi64, _mm256_i64gather_epi64, _mm256_mask_i64gather_epi64, __int64, i64, _mm_extract_epi64, _mm_extract_epi64, 2)
+_MM256GATHER(_mm_i32gather_epi32, _mm_mask_i32gather_epi32, _mm256_i32gather_epi32, _mm256_mask_i32gather_epi32, int, i32, _mm_extract_epi32__switched, _mm_extract_epi32__switched, 4)
+_MM256GATHER(_mm_i32gather_epi64, _mm_mask_i32gather_epi64, _mm256_i32gather_epi64, _mm256_mask_i32gather_epi64, __int64, i64, _mm_extract_epi32__switched, _mm_extract_epi64__switched, 2)
+_MM256GATHER(_mm_i64gather_epi32, _mm_mask_i64gather_epi32, _mm256_i64gather_epi32, _mm256_mask_i64gather_epi32, int, i32, _mm_extract_epi64__switched, _mm_extract_epi32__switched, 2)
+_MM256GATHER(_mm_i64gather_epi64, _mm_mask_i64gather_epi64, _mm256_i64gather_epi64, _mm256_mask_i64gather_epi64, __int64, i64, _mm_extract_epi64__switched, _mm_extract_epi64__switched, 2)
 
 #undef _mm_i32gather_pd
 #define _mm_i32gather_pd _Xmm_i32gather_pd
@@ -1174,8 +1181,10 @@ _MM256TWO_LANES_2(_mm256_maddubs_epi16, _mm_maddubs_epi16)
 __attribute__((always_inline, artificial))
 inline __m128i _mm_maskload_epi32 (int const* mem_addr, __m128i mask) {
   int dst[4];
-  for (int j = 0; j < 4; j++) {
-    if (_mm_extract_epi32(mask, j) < 0) {
+  int j;
+  
+  for (j = 0; j < 4; j++) {
+    if (_mm_extract_epi32__switched(mask, j) < 0) {
       dst[j] = mem_addr[j];
     } else {
       dst[j] = 0;
@@ -1198,8 +1207,10 @@ inline __m256i _mm256_maskload_epi32 (int const* mem_addr, __m256i mask) {
 __attribute__((always_inline, artificial))
 inline __m128i _mm_maskload_epi64 (__int64 const* mem_addr, __m128i mask) {
   __int64 dst[2];
-  for (int j = 0; j < 2; j++) {
-    if (_mm_extract_epi64(mask, j) < 0) {
+  int j;
+  
+  for (j = 0; j < 2; j++) {
+    if (_mm_extract_epi64__switched(mask, j) < 0) {
       dst[j] = mem_addr[j];
     } else {
       dst[j] = 0;
@@ -1221,9 +1232,10 @@ inline __m256i _mm256_maskload_epi64 (__int64 const* mem_addr, __m256i mask) {
 #define _mm_maskstore_epi32 _Xmm_maskstore_epi32
 __attribute__((always_inline, artificial))
 inline void _mm_maskstore_epi32 (int* mem_addr, __m128i mask, __m128i a) {
-  for (int j = 0; j < 4; j++) {
-    if (_mm_extract_epi32(mask, j) < 0) {
-      mem_addr[j] = _mm_extract_epi32(a, j);
+  int j;
+  for (j = 0; j < 4; j++) {
+    if (_mm_extract_epi32__switched(mask, j) < 0) {
+      mem_addr[j] = _mm_extract_epi32__switched(a, j);
     }
   }
 }
@@ -1238,9 +1250,10 @@ inline void _mm256_maskstore_epi32 (int* mem_addr, __m256i mask, __m256i a) {
 #define _mm_maskstore_epi64 _Xmm_maskstore_epi64
 __attribute__((always_inline, artificial))
 inline void _mm_maskstore_epi64 (__int64* mem_addr, __m128i mask, __m128i a) {
-  for (int j = 0; j < 2; j++) {
-    if (_mm_extract_epi64(mask, j) < 0) {
-      mem_addr[j] = _mm_extract_epi64(a, j);
+  int j;
+  for (j = 0; j < 2; j++) {
+    if (_mm_extract_epi64__switched(mask, j) < 0) {
+      mem_addr[j] = _mm_extract_epi64__switched(a, j);
     }
   }
 }
@@ -1340,7 +1353,6 @@ _MM256TWO_LANES_2(_mm256_packus_epi32, _mm_packus_epi32)
 
 #undef _mm256_permute2x128_si256
 #define _mm256_permute2x128_si256 _Xmm256_permute2x128_si256
-GENERATE_SWITCHED_CALL_2C_1(_mm256_extracti128_si256, __m128i, __m256i)
 __attribute__((always_inline, artificial, const))
 inline __m256i _mm256_permute2x128_si256 (__m256i a, __m256i b, const int imm8) {
   return _mm256_setr_m128i(
@@ -1353,7 +1365,6 @@ inline __m256i _mm256_permute2x128_si256 (__m256i a, __m256i b, const int imm8) 
 
 #undef _mm256_permute4x64_epi64
 #define _mm256_permute4x64_epi64 _Xmm256_permute4x64_epi64
-GENERATE_SWITCHED_CALL_2C_3(_mm256_extract_epi64, __int64, __m256i)
 __attribute__((always_inline, artificial, const))
 inline __m256i _mm256_permute4x64_epi64 (__m256i a, const int imm8) {
   return _mm256_setr_epi64x(

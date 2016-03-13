@@ -20,4 +20,4 @@ before_install:
   - (sysctl -a | grep machdep.cpu.features) || true
   - if [ "$CC" = "gcc" ]; then export CC="gcc-4.8"; fi
 script:
-  - echo | $CC -Wno-unknown-attributes -include sw-avx2intrin.h -mavx -x c - -c -o a.out
+  - echo | $CC -Wall -Wno-unknown-attributes -include sw-avx2intrin.h -mavx -x c - -c -o a.out
