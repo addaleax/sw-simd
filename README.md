@@ -1,4 +1,4 @@
-levenshtein-sse
+AVX2 in Software
 ===============
 
 [![Build Status](https://travis-ci.org/addaleax/sw-simd.svg?style=flat&branch=master)](https://travis-ci.org/addaleax/sw-simd?branch=master)
